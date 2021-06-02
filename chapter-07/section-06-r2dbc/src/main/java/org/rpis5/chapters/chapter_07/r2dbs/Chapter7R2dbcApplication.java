@@ -9,6 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.r2dbc.function.TransactionalDatabaseClient;
+import org.springframework.data.r2dbc.core.TransactionalDatabaseClient;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -18,6 +19,24 @@ import java.util.Arrays;
  *
  * Application may fail on the first start-up due to timeout for Docker image download.
  * Please, retry a few times in case of failures.
+ *
+ * 공식 문서 번역 : https://godekdls.github.io/Spring%20Data%20R2DBC/contents/
+ *
+ * Blocking 문제를 Reactive 하게 접근하여 Non-blocking 하게 동작하게 한 것이어서
+ * DB 자체를 Non-blocking 하게 한 것이 아닌 client 접근 부분만 Non-blocking 하게 한 것
+ * 따라서 DB 내부에서는 Lock 이 걸릴 것이기 때문에 근본적으로는 ... DB 의 병목 현상을 해결해야 한다
+ *
+ * 현재 비동기를 지원하는 DB는 R2DBC 기준으로 mssql, postgre, h2 (mysql 은 예정)
+ * 기존 jdbc나 jpa > mvc,  nio를 지원하는 api가 있는 DB > webflux
+ *
+ * https://happyer16.tistory.com/entry/스프링-blocking-vs-non-blocking-R2DBC-vs-JDBC-WebFlux-vs-Web-MVC
+ * R2DBC + Webflux가 높은 동시성때는 좋은 선택이다.
+ *  요청당 CPU를 조금 사용함
+ *  용청당 메모리가 조금 필요함
+ *  응답시간이 빠름
+ *  처리량도 높아짐
+ *  JAR도 가벼워짐
+ * 대략 200 concurrenct request 밑으로는 Spring Web MVC + JDBC가 좋은 선택
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -92,6 +111,15 @@ public class Chapter7R2dbcApplication implements CommandLineRunner {
         // Using raw client
         R2dbc r2dbc = new R2dbc(pgConnectionFactory);
 
+        /**
+         * inTransaction 트랜잭션 생성
+         * handle 리액티브 커넥션의 인스턴스를 래핑. SQL 실행
+         * execute sql 문장과 쿼리 매개변수 받기 → 영향 받은 행의 수 반환
+         * thenMany 이후 다시 작업 시작
+         * mapResult Flux 타입 반환
+         *
+         * R2DBC Client 는 리액티브 스타일의 연쇄형 API 제공
+         */
         r2dbc.inTransaction(handle ->
             handle
                 .execute("insert into book (id, title, publishing_year) " +
@@ -103,6 +131,7 @@ public class Chapter7R2dbcApplication implements CommandLineRunner {
                 .mapResult(result ->
                     result.map((row, rowMetadata) ->
                         row.get("title", String.class)))))
+//                .subscribe(elem -> log.info(" - Title: {}", elem));
             .doOnNext(elem -> log.info(" - Title: {}", elem))
             .blockLast();
 

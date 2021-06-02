@@ -1,6 +1,7 @@
 package org.rpis5.chapters.chapter_07.r2dbs;
 
 
+import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import java.util.function.Consumer;
 @Configuration
 public class PostgresConfiguration {
    private PostgreSQLContainer postgres;
+   private PostgresqlConnectionFactory factory;
 
    @Bean
    public DatabaseLocation databaseLocation() throws InterruptedException {

@@ -36,18 +36,47 @@ ext {
 	r2dbcClientlVersion = '1.0.0.BUILD-SNAPSHOT'
 }
 dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
 	compile('org.springframework.boot:spring-boot-starter-actuator')
 
 	// Magic happens here with Jitpack
 	compile("com.github.spring-projects:spring-data-jdbc:${springDataR2dbcVersion}")
+
+	/**
+	 * R2DBC 서비스 제공자 인터페이스
+	 * 드라이버 구현을 위한 최소한의 API 정의
+	 */
 	compile("io.r2dbc:r2dbc-spi:${r2dbcSpiVersion}")
+	/**
+	 * 비동기 통신을 위해 네티 프레임워크를 사용
+	 * 배압은 포털(portal) 이라는 기능을 통해 사용 (포털은 쿼리에 대한 실질적인 커서이며 리액티브 스트림으로 완벽하게 변환)
+	 * 관계형 데이터베이스는 적절한 배압 전파가 가능한 와이어 프로토콜을 가지고 있지 않다.
+	 */
 	compile("io.r2dbc:r2dbc-postgresql:${r2dbcPostgresqlVersion}")
+
+	/**
+	 * 사용자 요청을 SPI 레벨로 변환하는 사용자 친화적인 API 및 헬퍼 클래스 제공
+	 * Jdbi 가 JDBC 를 위해 하는 동작과 동일한 역할을 R2DBC 클라이언트가 R2DBC SPI에서 수행
+	 */
 	compile("io.r2dbc:r2dbc-client:${r2dbcClientlVersion}")
 
 	compile("org.testcontainers:testcontainers:${testContainersVersion}")
 	compile("org.testcontainers:postgresql:${testContainersVersion}")
 
 	compileOnly('org.projectlombok:lombok')
+
+	runtimeOnly 'io.r2dbc:r2dbc-h2'
+	runtimeOnly 'io.r2dbc:r2dbc-postgresql'
+
+	/**
+	 * 공식 드라이버 없음
+	 * 스프링부트 2.3 이후로 1.0 정식 릴리즈
+	 */
+	runtimeOnly 'dev.miku:r2dbc-mysql'
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile('io.projectreactor:reactor-test')

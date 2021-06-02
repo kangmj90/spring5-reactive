@@ -15,6 +15,14 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+/**
+ * 리액티브 응용 프로그램을 블로킹하지 않으면서 JDBC 드라이버를 래핑
+ * 전용 스레드 풀과 논블로킹 커넥션 풀 개념 사용으로 클라이언트의 요청은 커넥션을 기다리는 동안 스레드를 차단하지 않음
+ * 연결이 가능해지면 쿼리는 실행을 시작하고 스레드를 블로킹
+ *
+ * 라이브러리가 jdbc의 wrapper일 뿐이기 때문에 jdbc call을 할 때마다 새로운 스레드를 생성해서 blocking 작업을 처리
+ * 매번 jdbc call할 때마다 새로운 스레드를 생성하므로 결국 jdbc를 직접 사용할 때와 같은문제에 봉착
+ */
 @Slf4j
 @RequiredArgsConstructor
 @SpringBootApplication
